@@ -16,6 +16,13 @@
         "section_height": 200
       }
     },
+    "scroll_frame_FKqJ8E": {
+      "type": "scroll-frame",
+      "name": "Scroll Sequence",
+      "settings": {
+        "section_height": 200
+      }
+    },
     "image_banner": {
       "type": "image-banner",
       "blocks": {
@@ -230,6 +237,7 @@
   },
   "order": [
     "scroll_video_opti_RwL6Gf",
+    "scroll_frame_FKqJ8E",
     "image_banner",
     "rich_text",
     "featured_collection",
