@@ -16,6 +16,7 @@
 /* ------- Desktop ------- */
 .scroll-video-wrapper {
   position: relative;
+  overflow: visible !important; /* IMPORTANT pour Shopify */
 }
 
 .scroll-video {
@@ -68,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("scroll-video-wrapper-{{ section.id }}");
 
   /* -----------------------------------------------------
-     2) Préchargement progressif (haute performance)
+     2) Préchargement progressif (optionnel mais recommandé)
      ----------------------------------------------------- */
   const preloadFrames = () => {
     for (let i = 1; i <= frameCount; i++) {
@@ -76,8 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
       preloadImg.src = frameURL(i);
     }
   };
-
-  // Précharge quand le navigateur est "idle"
   if ("requestIdleCallback" in window) {
     requestIdleCallback(preloadFrames);
   } else {
@@ -85,24 +84,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* -----------------------------------------------------
-     3) Affiche la première frame
+     3) Affiche la première image
      ----------------------------------------------------- */
   img.src = frameURL(1);
 
   function getScrollMax() {
-    return wrapper.offsetHeight - window.innerHeight;
+    const v = wrapper.offsetHeight - window.innerHeight;
+    console.log("scrollMax =", v); // DEBUG : regarde ici dans la console !
+    return v;
   }
 
   let scrollMax = getScrollMax();
-  window.addEventListener("resize", () => {
-    scrollMax = getScrollMax();
-  });
+  window.addEventListener("resize", () => scrollMax = getScrollMax());
 
   /* -----------------------------------------------------
-     4) Animation scroll (optimisée)
+     4) Animation scroll
      ----------------------------------------------------- */
   let last = 0;
-  const fps = 45; // un peu plus fluide
+  const fps = 45;
   const interval = 1000 / fps;
 
   function updateFrame() {
@@ -138,9 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
       "id": "section_height",
       "label": "Hauteur desktop (vh)",
       "min": 100,
-      "max": 500,
+      "max": 800,
       "step": 10,
-      "default": 200
+      "default": 300
     }
   ],
   "presets": [
