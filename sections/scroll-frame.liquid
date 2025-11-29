@@ -60,15 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("scroll-seq-wrapper-{{ section.id }}");
 
   /* -----------------------------------------------------
-     Hauteur dynamique pour éviter le grand blanc
+     Hauteur dynamique alignée sur les frames
+     (une frame ≈ 1 hauteur d'écran / scroll)
      ----------------------------------------------------- */
-    function adjustWrapperHeight() {
-      const pixelsPerFrame = window.innerHeight / 1.1; // Ajuste si besoin
-      const totalHeight = pixelsPerFrame * frameCount;
-
-      wrapper.style.height = totalHeight + "px";
-    }
-
+  function adjustWrapperHeight() {
+    wrapper.style.height = (frameCount * window.innerHeight) + "px";
+  }
 
   adjustWrapperHeight();
   window.addEventListener("resize", adjustWrapperHeight);
@@ -77,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
      Affiche la première image
      ----------------------------------------------------- */
   img.src = frameURL(1);
+  img.dataset.src = img.src;
 
   /* -----------------------------------------------------
      Préchargement "soft"
