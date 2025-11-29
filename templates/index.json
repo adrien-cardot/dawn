@@ -11,6 +11,7 @@
   "sections": {
     "scroll_video_opti_RwL6Gf": {
       "type": "scroll-video-opti",
+      "disabled": true,
       "name": "Scroll Video",
       "settings": {
         "section_height": 200
