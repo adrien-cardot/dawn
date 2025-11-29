@@ -48,6 +48,8 @@ function adjustWrapperHeight(wrapper, frameCount) {
   const scrollFactor = 2.2; // parfait pour 300–500 frames
   wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
 }
+adjustWrapperHeight(wrapper, frameCount);
+window.addEventListener("resize", () => adjustWrapperHeight(wrapper, frameCount));
 
 document.addEventListener("DOMContentLoaded", () => {
 
