@@ -7,6 +7,8 @@
     id="scroll-seq-{{ section.id }}" 
     class="scroll-video"
     alt=""
+    decoding="sync"
+    fetchpriority="high"
   >
 </div>
 
@@ -22,6 +24,8 @@
   width: 100%;
   height: 100vh;
   object-fit: cover;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* ------- Mobile ------- */
@@ -34,8 +38,6 @@
     height: 100vh;
     width: 100vw;
     object-fit: cover;
-    position: sticky;
-    top: 0;
   }
 
   .scroll-video-wrapper + * {
@@ -48,7 +50,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   /* -----------------------------------------------------
-     1) Définis ici les URLs Shopify de tes frames uploadées
+     1) URLs des frames Shopify
      ----------------------------------------------------- */
   const frameURL = (i) => {
     const files = {
@@ -58,17 +60,33 @@ document.addEventListener("DOMContentLoaded", () => {
       4: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0004.png?v=1764441207",
       5: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0005.png?v=1764441210"
     };
-    return files[i];
+    return files[i] || files[1];
   };
 
-  /* -----------------------------------------------------
-     2) Setup de la séquence d’images
-     ----------------------------------------------------- */
-  const frameCount = 5; // mets ici ton nombre total de frames
+  const frameCount = 5;
   const img = document.getElementById("scroll-seq-{{ section.id }}");
   const wrapper = document.getElementById("scroll-video-wrapper-{{ section.id }}");
 
-  // Première image
+  /* -----------------------------------------------------
+     2) Préchargement progressif (haute performance)
+     ----------------------------------------------------- */
+  const preloadFrames = () => {
+    for (let i = 1; i <= frameCount; i++) {
+      const preloadImg = new Image();
+      preloadImg.src = frameURL(i);
+    }
+  };
+
+  // Précharge quand le navigateur est "idle"
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(preloadFrames);
+  } else {
+    setTimeout(preloadFrames, 200);
+  }
+
+  /* -----------------------------------------------------
+     3) Affiche la première frame
+     ----------------------------------------------------- */
   img.src = frameURL(1);
 
   function getScrollMax() {
@@ -81,10 +99,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -----------------------------------------------------
-     3) Animation scroll → change la frame affichée
+     4) Animation scroll (optimisée)
      ----------------------------------------------------- */
   let last = 0;
-  const fps = 30;
+  const fps = 45; // un peu plus fluide
   const interval = 1000 / fps;
 
   function updateFrame() {
@@ -92,9 +110,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (scrollMax <= 0) return;
 
     const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
-    const index = Math.min(frameCount, Math.ceil(progress * frameCount));
+    const index = Math.max(1, Math.min(frameCount, Math.round(progress * frameCount)));
 
-    img.src = frameURL(index);
+    const newSrc = frameURL(index);
+    if (img.dataset.src !== newSrc) {
+      img.dataset.src = newSrc;
+      img.src = newSrc;
+    }
   }
 
   window.addEventListener("scroll", () => {
