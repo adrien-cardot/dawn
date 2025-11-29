@@ -63,9 +63,21 @@ document.addEventListener("DOMContentLoaded", () => {
      Hauteur dynamique alignée sur les frames
      (une frame ≈ 1 hauteur d'écran / scroll)
      ----------------------------------------------------- */
-  function adjustWrapperHeight() {
-    wrapper.style.height = (frameCount * window.innerHeight) + "px";
-  }
+    function updateFrame() {
+      scrollMax = getScrollMax();
+      if (scrollMax <= 0) return;
+
+      const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
+      const index = Math.max(1, Math.min(frameCount, Math.round(progress * frameCount)));
+
+      const newSrc = frameURL(index);
+
+      if (img.dataset.src !== newSrc) {
+        img.dataset.src = newSrc;
+        img.src = newSrc;
+      }
+    }
+
 
   adjustWrapperHeight();
   window.addEventListener("resize", adjustWrapperHeight);
