@@ -1,0 +1,111 @@
+<div 
+  id="scroll-video-wrapper-{{ section.id }}" 
+  class="scroll-video-wrapper"
+  style="height: {{ section.settings.section_height }}vh;"
+>
+  <video
+    id="scroll-video-{{ section.id }}"
+    src="https://cdn.shopify.com/videos/c/o/v/7c27f0fbc2654b798d1e20d665a3af3c.mp4"
+    playsinline
+    preload="auto"
+    muted
+    class="scroll-video"
+  ></video>
+</div>
+
+<style>
+/* ------- Desktop ------- */
+.scroll-video-wrapper {
+  position: relative;
+}
+
+.scroll-video {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* ------- Mobile ------- */
+@media (max-width: 767px) {
+  .scroll-video-wrapper {
+    height: 120vh; /* durée de scroll raisonnable */
+  }
+
+  .scroll-video {
+    height: 100vh;
+    width: 100vw;
+    object-fit: cover;
+    position: sticky;
+    top: 0;
+  }
+
+  /* Empêche le wrapper de bloquer la suite du site */
+  .scroll-video-wrapper + * {
+    margin-top: 0 !important;
+  }
+}
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const video = document.getElementById("scroll-video-{{ section.id }}");
+  const wrapper = document.getElementById("scroll-video-wrapper-{{ section.id }}");
+
+  video.pause();
+  video.currentTime = 0;
+
+  function getScrollMax() {
+    return wrapper.offsetHeight - window.innerHeight;
+  }
+
+  let scrollMax = getScrollMax();
+  window.addEventListener("resize", () => scrollMax = getScrollMax());
+
+  // Optimisation FPS
+  let last = 0;
+  const fps = 30;
+  const interval = 1000 / fps;
+
+  function updateVideo() {
+    if (!video.duration) return;
+    scrollMax = getScrollMax();
+    if (scrollMax <= 0) return;
+
+    const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
+    video.currentTime = progress * video.duration;
+  }
+
+  window.addEventListener("scroll", () => {
+    const now = performance.now();
+    if (now - last < interval) return;
+    last = now;
+    requestAnimationFrame(updateVideo);
+  });
+});
+</script>
+
+
+{% schema %}
+{
+  "name": "Scroll Video",
+  "settings": [
+    {
+      "type": "range",
+      "id": "section_height",
+      "label": "Hauteur desktop (vh)",
+      "min": 100,
+      "max": 500,
+      "step": 10,
+      "default": 200
+    }
+  ],
+  "presets": [
+    {
+      "name": "Scroll Video"
+    }
+  ]
+}
+{% endschema %}
