@@ -30,7 +30,7 @@
 
 @media (max-width: 767px) {
   .scroll-seq-wrapper {
-    height: 200vh;
+    height: auto;
   }
 
   .scroll-seq-img {
@@ -41,16 +41,6 @@
 </style>
 
 <script>
-
-// Hauteur auto calculée pour éviter le "grand blanc"
-function adjustWrapperHeight(wrapper, frameCount) {
-  // facteur : plus il est haut, plus l'animation dure longtemps
-  const scrollFactor = 2.2; // parfait pour 300–500 frames
-  wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
-}
-adjustWrapperHeight(wrapper, frameCount);
-window.addEventListener("resize", () => adjustWrapperHeight(wrapper, frameCount));
-
 document.addEventListener("DOMContentLoaded", () => {
 
   /* -----------------------------------------------------
@@ -59,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const frameCount = 326;
 
   /* -----------------------------------------------------
-     Générateur d'URL des frames
+     URL générée automatiquement
      ----------------------------------------------------- */
   const frameURL = (i) => {
     const num = String(i).padStart(4, "0");
@@ -70,12 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("scroll-seq-wrapper-{{ section.id }}");
 
   /* -----------------------------------------------------
-     1) Affiche la première image
+     Hauteur dynamique pour éviter le grand blanc
+     ----------------------------------------------------- */
+  function adjustWrapperHeight() {
+    const scrollFactor = 2.2; 
+    wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
+  }
+
+  adjustWrapperHeight();
+  window.addEventListener("resize", adjustWrapperHeight);
+
+  /* -----------------------------------------------------
+     Affiche la première image
      ----------------------------------------------------- */
   img.src = frameURL(1);
 
   /* -----------------------------------------------------
-     2) Préchargement "soft" pour fluidité
+     Préchargement "soft"
      ----------------------------------------------------- */
   const preloadFrames = () => {
     for (let i = 1; i <= frameCount; i++) {
@@ -88,17 +89,17 @@ document.addEventListener("DOMContentLoaded", () => {
   else setTimeout(preloadFrames, 250);
 
   /* -----------------------------------------------------
-     3) Calcul du scroll
+     Calcul du scroll
      ----------------------------------------------------- */
   function getScrollMax() {
     return wrapper.offsetHeight - window.innerHeight;
   }
 
   let scrollMax = getScrollMax();
-  window.addEventListener("resize", () => scrollMax = getScrollMax());
+  window.addEventListener("resize", () => (scrollMax = getScrollMax()));
 
   /* -----------------------------------------------------
-     4) Animation scroll (45 FPS optimisé)
+     Animation scroll (45 FPS)
      ----------------------------------------------------- */
   let last = 0;
   const fps = 45;
@@ -131,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 {% schema %}
 {
-  "name": "Scroll frames)",
+  "name": "Scroll frames",
   "settings": [
     {
       "type": "range",
