@@ -3,14 +3,11 @@
   class="scroll-video-wrapper"
   style="height: {{ section.settings.section_height }}vh;"
 >
-  <video
-    id="scroll-video-{{ section.id }}"
-    src="https://cdn.shopify.com/videos/c/o/v/7c27f0fbc2654b798d1e20d665a3af3c.mp4"
-    playsinline
-    preload="auto"
-    muted
+  <img 
+    id="scroll-seq-{{ section.id }}" 
     class="scroll-video"
-  ></video>
+    alt=""
+  >
 </div>
 
 <style>
@@ -23,14 +20,14 @@
   position: sticky;
   top: 0;
   width: 100%;
-  height: auto;
+  height: 100vh;
   object-fit: cover;
 }
 
 /* ------- Mobile ------- */
 @media (max-width: 767px) {
   .scroll-video-wrapper {
-    height: 120vh; /* durée de scroll raisonnable */
+    height: 120vh;
   }
 
   .scroll-video {
@@ -41,56 +38,78 @@
     top: 0;
   }
 
-  /* Empêche le wrapper de bloquer la suite du site */
   .scroll-video-wrapper + * {
     margin-top: 0 !important;
   }
 }
 </style>
 
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const video = document.getElementById("scroll-video-{{ section.id }}");
+
+  /* -----------------------------------------------------
+     1) Définis ici les URLs Shopify de tes frames uploadées
+     ----------------------------------------------------- */
+  const frameURL = (i) => {
+    const files = {
+      1: "URL_SHOPIFY_DE_frame_0001.png",
+      2: "URL_SHOPIFY_DE_frame_0002.png",
+      3: "URL_SHOPIFY_DE_frame_0003.png",
+      4: "URL_SHOPIFY_DE_frame_0004.png",
+      5: "URL_SHOPIFY_DE_frame_0005.png"
+    };
+    return files[i];
+  };
+
+  /* -----------------------------------------------------
+     2) Setup de la séquence d’images
+     ----------------------------------------------------- */
+  const frameCount = 5; // mets ici ton nombre total de frames
+  const img = document.getElementById("scroll-seq-{{ section.id }}");
   const wrapper = document.getElementById("scroll-video-wrapper-{{ section.id }}");
 
-  video.pause();
-  video.currentTime = 0;
+  // Première image
+  img.src = frameURL(1);
 
   function getScrollMax() {
     return wrapper.offsetHeight - window.innerHeight;
   }
 
   let scrollMax = getScrollMax();
-  window.addEventListener("resize", () => scrollMax = getScrollMax());
+  window.addEventListener("resize", () => {
+    scrollMax = getScrollMax();
+  });
 
-  // Optimisation FPS
+  /* -----------------------------------------------------
+     3) Animation scroll → change la frame affichée
+     ----------------------------------------------------- */
   let last = 0;
   const fps = 30;
   const interval = 1000 / fps;
 
-  function updateVideo() {
-    if (!video.duration) return;
+  function updateFrame() {
     scrollMax = getScrollMax();
     if (scrollMax <= 0) return;
 
     const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
-    video.currentTime = progress * video.duration;
+    const index = Math.min(frameCount, Math.ceil(progress * frameCount));
+
+    img.src = frameURL(index);
   }
 
   window.addEventListener("scroll", () => {
     const now = performance.now();
     if (now - last < interval) return;
     last = now;
-    requestAnimationFrame(updateVideo);
+    requestAnimationFrame(updateFrame);
   });
+
 });
 </script>
 
-
 {% schema %}
 {
-  "name": "Scroll Video",
+  "name": "Scroll Sequence",
   "settings": [
     {
       "type": "range",
@@ -104,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ],
   "presets": [
     {
-      "name": "Scroll Video"
+      "name": "Scroll Sequence"
     }
   ]
 }
