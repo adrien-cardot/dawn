@@ -43,14 +43,8 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* -----------------------------------------------------
-     Nombre total de frames
-     ----------------------------------------------------- */
   const frameCount = 315;
 
-  /* -----------------------------------------------------
-     URL générée automatiquement
-     ----------------------------------------------------- */
   const frameURL = (i) => {
     const num = String(i).padStart(4, "0");
     return `https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_${num}.jpg`;
@@ -60,37 +54,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("scroll-seq-wrapper-{{ section.id }}");
 
   /* -----------------------------------------------------
-     Hauteur dynamique alignée sur les frames
-     (une frame ≈ 1 hauteur d'écran / scroll)
+     Hauteur du wrapper = scroll court mais suffisant
      ----------------------------------------------------- */
-    function updateFrame() {
-      scrollMax = getScrollMax();
-      if (scrollMax <= 0) return;
-
-      const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
-      const index = Math.max(1, Math.min(frameCount, Math.round(progress * frameCount)));
-
-      const newSrc = frameURL(index);
-
-      if (img.dataset.src !== newSrc) {
-        img.dataset.src = newSrc;
-        img.src = newSrc;
-      }
-    }
-
+  function adjustWrapperHeight() {
+    const scrollFactor = frameCount / 40; // scroll court & fiable
+    wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
+  }
 
   adjustWrapperHeight();
   window.addEventListener("resize", adjustWrapperHeight);
 
-  /* -----------------------------------------------------
-     Affiche la première image
-     ----------------------------------------------------- */
+  /* Affiche la première image */
   img.src = frameURL(1);
   img.dataset.src = img.src;
 
-  /* -----------------------------------------------------
-     Préchargement "soft"
-     ----------------------------------------------------- */
+  /* Préchargement lazy */
   const preloadFrames = () => {
     for (let i = 1; i <= frameCount; i++) {
       const im = new Image();
@@ -101,9 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if ("requestIdleCallback" in window) requestIdleCallback(preloadFrames);
   else setTimeout(preloadFrames, 250);
 
-  /* -----------------------------------------------------
-     Calcul du scroll
-     ----------------------------------------------------- */
+  /* Calcul du scroll */
   function getScrollMax() {
     return wrapper.offsetHeight - window.innerHeight;
   }
@@ -111,9 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let scrollMax = getScrollMax();
   window.addEventListener("resize", () => (scrollMax = getScrollMax()));
 
-  /* -----------------------------------------------------
-     Animation scroll (45 FPS)
-     ----------------------------------------------------- */
+  /* Animation scroll FPS */
   let last = 0;
   const fps = 45;
   const interval = 1000 / fps;
