@@ -1,139 +1,217 @@
 <div 
-  id="scroll-seq-wrapper-{{ section.id }}" 
-  class="scroll-seq-wrapper"
-  style="height:auto;"
+  id="scroll-seq-{{ section.id }}" 
+  class="scroll-seq"
 >
-  <img 
-    id="scroll-seq-{{ section.id }}" 
-    class="scroll-seq-img"
-    alt=""
-    decoding="sync"
-    fetchpriority="high"
-  >
+  <!-- Cet élément sert juste à créer la hauteur de scroll -->
+  <div 
+    class="scroll-seq__spacer" 
+    data-scroll-spacer 
+    data-scroll-area="{{ section.settings.scroll_area }}"
+  ></div>
+
+  <!-- Canvas qui affiche la séquence -->
+  <canvas class="scroll-seq__canvas"></canvas>
 </div>
 
 <style>
-.scroll-seq-wrapper {
+.scroll-seq {
   position: relative;
-  overflow: visible !important;
 }
 
-.scroll-seq-img {
+/* Hauteur contrôlée en JS via data-scroll-area (px) */
+.scroll-seq__spacer {
+  width: 100%;
+}
+
+/* Canvas sticky qui reste en place pendant le scroll de la séquence */
+.scroll-seq__canvas {
   position: sticky;
   top: 0;
   width: 100%;
   height: 100vh;
-  object-fit: cover;
-  will-change: opacity, transform;
-  transform: translateZ(0);
+  display: block;
 }
 
 @media (max-width: 767px) {
-  .scroll-seq-wrapper {
-    height: auto;
-  }
-
-  .scroll-seq-img {
-    height: 100vh;
+  .scroll-seq__canvas {
     width: 100vw;
+    height: 100vh;
   }
 }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const section = document.getElementById("scroll-seq-{{ section.id }}");
+  if (!section) return;
 
-  const frameCount = 315;
+  const canvas = section.querySelector(".scroll-seq__canvas");
+  const spacer = section.querySelector("[data-scroll-spacer]");
+  if (!canvas || !spacer) return;
 
+  const ctx = canvas.getContext("2d");
+
+  /* -----------------------------------------------------
+     CONFIG : tes frames
+     ----------------------------------------------------- */
+  const frameCount = {{ section.settings.frame_count | default: 315 }};
   const frameURL = (i) => {
     const num = String(i).padStart(4, "0");
+    // 👉 on garde ton chemin CDN :
     return `https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_${num}.jpg`;
   };
 
-  const img = document.getElementById("scroll-seq-{{ section.id }}");
-  const wrapper = document.getElementById("scroll-seq-wrapper-{{ section.id }}");
+  // Longueur du scroll (en px), vient du data-scroll-area
+  const scrollArea = parseInt(spacer.getAttribute("data-scroll-area"), 10) || 2200;
+
+  // Donne au spacer la bonne hauteur (zone scrollable)
+  spacer.style.height = (scrollArea + window.innerHeight) + "px";
+
+  const images = [];
+  let currentFrameIndex = 1;
+  let canvasWidth = 0;
+  let canvasHeight = 0;
 
   /* -----------------------------------------------------
-     Hauteur du wrapper = scroll court mais suffisant
+     Canvas responsive
      ----------------------------------------------------- */
-  function adjustWrapperHeight() {
-    const scrollFactor = frameCount / 40; // scroll court & fiable
-    wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
-  }
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
 
-  adjustWrapperHeight();
-  window.addEventListener("resize", adjustWrapperHeight);
+    canvasWidth = rect.width;
+    canvasHeight = rect.height || window.innerHeight;
 
-  /* Affiche la première image */
-  img.src = frameURL(1);
-  img.dataset.src = img.src;
+    canvas.width = canvasWidth * dpr;
+    canvas.height = canvasHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  /* Préchargement lazy */
-  const preloadFrames = () => {
-    for (let i = 1; i <= frameCount; i++) {
-      const im = new Image();
-      im.src = frameURL(i);
+    const img = images[currentFrameIndex];
+    if (img && img.complete) {
+      drawImage(img);
     }
-  };
-
-  if ("requestIdleCallback" in window) requestIdleCallback(preloadFrames);
-  else setTimeout(preloadFrames, 250);
-
-  /* Calcul du scroll */
-  function getScrollMax() {
-    return wrapper.offsetHeight - window.innerHeight;
   }
 
-  let scrollMax = getScrollMax();
-  window.addEventListener("resize", () => (scrollMax = getScrollMax()));
+  window.addEventListener("resize", resizeCanvas);
 
-  /* Animation scroll FPS */
-  let last = 0;
+  /* -----------------------------------------------------
+     Chargement des images (lazy + soft preload)
+     ----------------------------------------------------- */
+  function loadImage(index) {
+    if (images[index]) return images[index];
+
+    const img = new Image();
+    img.src = frameURL(index);
+    images[index] = img;
+
+    img.onload = () => {
+      if (index === 1) {
+        drawImage(img);
+      }
+    };
+
+    return img;
+  }
+
+  // Précharge la première frame + quelques suivantes
+  loadImage(1);
+  for (let i = 2; i <= Math.min(frameCount, 60); i++) {
+    loadImage(i);
+  }
+
+  /* -----------------------------------------------------
+     Dessin dans le canvas (cover)
+     ----------------------------------------------------- */
+  function drawImage(img) {
+    if (!img || !canvasWidth || !canvasHeight) return;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    const scale = Math.max(
+      canvasWidth / img.width,
+      canvasHeight / img.height
+    );
+
+    const w = img.width * scale;
+    const h = img.height * scale;
+    const x = (canvasWidth - w) / 2;
+    const y = (canvasHeight - h) / 2;
+
+    ctx.drawImage(img, x, y, w, h);
+  }
+
+  /* -----------------------------------------------------
+     Scroll → frame
+     ----------------------------------------------------- */
+  let lastTime = 0;
   const fps = 45;
   const interval = 1000 / fps;
 
   function updateFrame() {
-    scrollMax = getScrollMax();
-    if (scrollMax <= 0) return;
+    const now = performance.now();
+    if (now - lastTime < interval) return;
+    lastTime = now;
 
-    const progress = Math.min(Math.max(window.scrollY / scrollMax, 0), 1);
-    const index = Math.max(1, Math.min(frameCount, Math.round(progress * frameCount)));
+    const sectionTop = section.offsetTop;
+    const scrollY = window.scrollY;
+    const relativeScroll = scrollY - sectionTop;
 
-    const newSrc = frameURL(index);
+    // clamp dans la zone d'animation
+    const clamped = Math.max(0, Math.min(scrollArea, relativeScroll));
+    const progress = clamped / scrollArea;
 
-    if (img.dataset.src !== newSrc) {
-      img.dataset.src = newSrc;
-      img.src = newSrc;
+    // 1 → frameCount
+    const targetIndex = 1 + Math.round(progress * (frameCount - 1));
+
+    if (targetIndex === currentFrameIndex) return;
+    currentFrameIndex = targetIndex;
+
+    const img = loadImage(currentFrameIndex);
+
+    if (img.complete) {
+      drawImage(img);
+    } else {
+      img.onload = () => {
+        if (currentFrameIndex === targetIndex) {
+          drawImage(img);
+        }
+      };
     }
   }
 
   window.addEventListener("scroll", () => {
-    const now = performance.now();
-    if (now - last < interval) return;
-    last = now;
     requestAnimationFrame(updateFrame);
   });
 
+  // Initialisation
+  resizeCanvas();
+  updateFrame();
 });
 </script>
 
 {% schema %}
 {
-  "name": "Scroll frames",
+  "name": "Scroll frames (canvas)",
   "settings": [
     {
+      "type": "number",
+      "id": "frame_count",
+      "label": "Nombre de frames",
+      "default": 315
+    },
+    {
       "type": "range",
-      "id": "section_height",
-      "label": "Hauteur desktop (vh)",
-      "min": 100,
-      "max": 1000,
-      "step": 10,
-      "default": 400
+      "id": "scroll_area",
+      "label": "Longueur du scroll (px)",
+      "min": 800,
+      "max": 4000,
+      "step": 100,
+      "default": 2200
     }
   ],
   "presets": [
     {
-      "name": "Scroll frame"
+      "name": "Scroll frames (canvas)"
     }
   ]
 }
