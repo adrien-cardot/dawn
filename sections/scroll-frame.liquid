@@ -1,11 +1,11 @@
 <div 
-  id="scroll-video-wrapper-{{ section.id }}" 
-  class="scroll-video-wrapper"
+  id="scroll-seq-wrapper-{{ section.id }}" 
+  class="scroll-seq-wrapper"
   style="height: {{ section.settings.section_height }}vh;"
 >
   <img 
     id="scroll-seq-{{ section.id }}" 
-    class="scroll-video"
+    class="scroll-seq-img"
     alt=""
     decoding="sync"
     fetchpriority="high"
@@ -13,36 +13,29 @@
 </div>
 
 <style>
-/* ------- Desktop ------- */
-.scroll-video-wrapper {
+.scroll-seq-wrapper {
   position: relative;
-  overflow: visible !important; /* IMPORTANT pour Shopify */
+  overflow: visible !important;
 }
 
-.scroll-video {
+.scroll-seq-img {
   position: sticky;
   top: 0;
   width: 100%;
   height: 100vh;
   object-fit: cover;
-  will-change: transform;
+  will-change: opacity, transform;
   transform: translateZ(0);
 }
 
-/* ------- Mobile ------- */
 @media (max-width: 767px) {
-  .scroll-video-wrapper {
-    height: 120vh;
+  .scroll-seq-wrapper {
+    height: 200vh;
   }
 
-  .scroll-video {
+  .scroll-seq-img {
     height: 100vh;
     width: 100vw;
-    object-fit: cover;
-  }
-
-  .scroll-video-wrapper + * {
-    margin-top: 0 !important;
   }
 }
 </style>
@@ -51,54 +44,51 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   /* -----------------------------------------------------
-     1) URLs des frames Shopify
+     Nombre total de frames
+     ----------------------------------------------------- */
+  const frameCount = 326;
+
+  /* -----------------------------------------------------
+     Générateur d'URL des frames
      ----------------------------------------------------- */
   const frameURL = (i) => {
-    const files = {
-      1: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0001.png?v=1764441086",
-      2: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0002.png?v=1764441145",
-      3: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0003.png?v=1764441201",
-      4: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0004.png?v=1764441207",
-      5: "https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_0005.png?v=1764441210"
-    };
-    return files[i] || files[1];
+    const num = String(i).padStart(4, "0");
+    return `https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_${num}.jpg`;
   };
 
-  const frameCount = 5;
   const img = document.getElementById("scroll-seq-{{ section.id }}");
-  const wrapper = document.getElementById("scroll-video-wrapper-{{ section.id }}");
+  const wrapper = document.getElementById("scroll-seq-wrapper-{{ section.id }}");
 
   /* -----------------------------------------------------
-     2) Préchargement progressif (optionnel mais recommandé)
-     ----------------------------------------------------- */
-  const preloadFrames = () => {
-    for (let i = 1; i <= frameCount; i++) {
-      const preloadImg = new Image();
-      preloadImg.src = frameURL(i);
-    }
-  };
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(preloadFrames);
-  } else {
-    setTimeout(preloadFrames, 200);
-  }
-
-  /* -----------------------------------------------------
-     3) Affiche la première image
+     1) Affiche la première image
      ----------------------------------------------------- */
   img.src = frameURL(1);
 
+  /* -----------------------------------------------------
+     2) Préchargement "soft" pour fluidité
+     ----------------------------------------------------- */
+  const preloadFrames = () => {
+    for (let i = 1; i <= frameCount; i++) {
+      const im = new Image();
+      im.src = frameURL(i);
+    }
+  };
+
+  if ("requestIdleCallback" in window) requestIdleCallback(preloadFrames);
+  else setTimeout(preloadFrames, 250);
+
+  /* -----------------------------------------------------
+     3) Calcul du scroll
+     ----------------------------------------------------- */
   function getScrollMax() {
-    const v = wrapper.offsetHeight - window.innerHeight;
-    console.log("scrollMax =", v); // DEBUG : regarde ici dans la console !
-    return v;
+    return wrapper.offsetHeight - window.innerHeight;
   }
 
   let scrollMax = getScrollMax();
   window.addEventListener("resize", () => scrollMax = getScrollMax());
 
   /* -----------------------------------------------------
-     4) Animation scroll
+     4) Animation scroll (45 FPS optimisé)
      ----------------------------------------------------- */
   let last = 0;
   const fps = 45;
@@ -112,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const index = Math.max(1, Math.min(frameCount, Math.round(progress * frameCount)));
 
     const newSrc = frameURL(index);
+
     if (img.dataset.src !== newSrc) {
       img.dataset.src = newSrc;
       img.src = newSrc;
@@ -130,21 +121,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 {% schema %}
 {
-  "name": "Scroll Sequence",
+  "name": "Scroll frames)",
   "settings": [
     {
       "type": "range",
       "id": "section_height",
       "label": "Hauteur desktop (vh)",
       "min": 100,
-      "max": 800,
+      "max": 1000,
       "step": 10,
-      "default": 300
+      "default": 400
     }
   ],
   "presets": [
     {
-      "name": "Scroll Sequence"
+      "name": "Scroll frame"
     }
   ]
 }
