@@ -1,7 +1,7 @@
 <div 
   id="scroll-seq-wrapper-{{ section.id }}" 
   class="scroll-seq-wrapper"
-  style="height: {{ section.settings.section_height }}vh;"
+  style="height:auto;"
 >
   <img 
     id="scroll-seq-{{ section.id }}" 
@@ -41,6 +41,14 @@
 </style>
 
 <script>
+
+// Hauteur auto calculée pour éviter le "grand blanc"
+function adjustWrapperHeight(wrapper, frameCount) {
+  // facteur : plus il est haut, plus l'animation dure longtemps
+  const scrollFactor = 2.2; // parfait pour 300–500 frames
+  wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
   /* -----------------------------------------------------
