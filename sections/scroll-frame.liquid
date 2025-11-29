@@ -2,14 +2,12 @@
   id="scroll-seq-{{ section.id }}" 
   class="scroll-seq"
 >
-  <!-- Cet élément sert juste à créer la hauteur de scroll -->
   <div 
     class="scroll-seq__spacer" 
     data-scroll-spacer 
     data-scroll-area="{{ section.settings.scroll_area }}"
   ></div>
 
-  <!-- Canvas qui affiche la séquence -->
   <canvas class="scroll-seq__canvas"></canvas>
 </div>
 
@@ -18,12 +16,10 @@
   position: relative;
 }
 
-/* Hauteur contrôlée en JS via data-scroll-area (px) */
 .scroll-seq__spacer {
   width: 100%;
 }
 
-/* Canvas sticky qui reste en place pendant le scroll de la séquence */
 .scroll-seq__canvas {
   position: sticky;
   top: 0;
@@ -47,33 +43,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const canvas = section.querySelector(".scroll-seq__canvas");
   const spacer = section.querySelector("[data-scroll-spacer]");
-  if (!canvas || !spacer) return;
-
   const ctx = canvas.getContext("2d");
 
   /* -----------------------------------------------------
-     CONFIG : tes frames
+     CONFIG GÉNÉRALE
      ----------------------------------------------------- */
-  const frameCount = {{ section.settings.frame_count | default: 315 }};
+
+  const originalFrameCount = {{ section.settings.frame_count | default: 315 }};
+  
+  // On charge UNE IMAGE SUR DEUX
+  const frames = [];
+  for (let i = 1; i <= originalFrameCount; i += 2) {
+    frames.push(i);
+  }
+
+  const frameCount = frames.length;
+
   const frameURL = (i) => {
     const num = String(i).padStart(4, "0");
-    // 👉 on garde ton chemin CDN :
     return `https://cdn.shopify.com/s/files/1/0985/2066/2341/files/frame_${num}.jpg`;
   };
 
-  // Longueur du scroll (en px), vient du data-scroll-area
+  /* -----------------------------------------------------
+     SCROLL AREA
+     ----------------------------------------------------- */
   const scrollArea = parseInt(spacer.getAttribute("data-scroll-area"), 10) || 2200;
-
-  // Donne au spacer la bonne hauteur (zone scrollable)
   spacer.style.height = (scrollArea + window.innerHeight) + "px";
 
   const images = [];
-  let currentFrameIndex = 1;
+  let currentFrame = 0;
   let canvasWidth = 0;
   let canvasHeight = 0;
 
   /* -----------------------------------------------------
-     Canvas responsive
+     CANVAS RESPONSIVE
      ----------------------------------------------------- */
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -86,45 +89,39 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.height = canvasHeight * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const img = images[currentFrameIndex];
-    if (img && img.complete) {
-      drawImage(img);
+    if (images[currentFrame] && images[currentFrame].complete) {
+      drawImage(images[currentFrame]);
     }
   }
 
   window.addEventListener("resize", resizeCanvas);
 
   /* -----------------------------------------------------
-     Chargement des images (lazy + soft preload)
+     LOADER (lazy + soft preload)
      ----------------------------------------------------- */
   function loadImage(index) {
     if (images[index]) return images[index];
 
     const img = new Image();
-    img.src = frameURL(index);
+    img.src = frameURL(frames[index]);
     images[index] = img;
 
     img.onload = () => {
-      if (index === 1) {
-        drawImage(img);
-      }
+      if (index === 0) drawImage(img);
     };
 
     return img;
   }
 
-  // Précharge la première frame + quelques suivantes
-  loadImage(1);
-  for (let i = 2; i <= Math.min(frameCount, 60); i++) {
+  // Précharge les premières frames
+  for (let i = 0; i < Math.min(frameCount, 40); i++) {
     loadImage(i);
   }
 
   /* -----------------------------------------------------
-     Dessin dans le canvas (cover)
+     DESSIN SUR LE CANVAS
      ----------------------------------------------------- */
   function drawImage(img) {
-    if (!img || !canvasWidth || !canvasHeight) return;
-
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     const scale = Math.max(
@@ -141,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* -----------------------------------------------------
-     Scroll → frame
+     SCROLL → INDEX
      ----------------------------------------------------- */
   let lastTime = 0;
   const fps = 45;
@@ -156,47 +153,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const scrollY = window.scrollY;
     const relativeScroll = scrollY - sectionTop;
 
-    // clamp dans la zone d'animation
     const clamped = Math.max(0, Math.min(scrollArea, relativeScroll));
     const progress = clamped / scrollArea;
 
-    // 1 → frameCount
-    const targetIndex = 1 + Math.round(progress * (frameCount - 1));
+    // map progression 0→1 vers 0→frameCount-1
+    const targetFrame = Math.floor(progress * (frameCount - 1));
 
-    if (targetIndex === currentFrameIndex) return;
-    currentFrameIndex = targetIndex;
+    if (targetFrame === currentFrame) return;
+    currentFrame = targetFrame;
 
-    const img = loadImage(currentFrameIndex);
+    const img = loadImage(currentFrame);
 
-    if (img.complete) {
-      drawImage(img);
-    } else {
-      img.onload = () => {
-        if (currentFrameIndex === targetIndex) {
-          drawImage(img);
-        }
-      };
-    }
+    if (img.complete) drawImage(img);
+    else img.onload = () => { if (currentFrame === targetFrame) drawImage(img); };
   }
 
-  window.addEventListener("scroll", () => {
-    requestAnimationFrame(updateFrame);
-  });
+  window.addEventListener("scroll", () => requestAnimationFrame(updateFrame));
 
-  // Initialisation
+  // INIT
   resizeCanvas();
-  updateFrame();
 });
 </script>
 
 {% schema %}
 {
-  "name": "Scroll frames (canvas)",
+  "name": "Scroll frames",
   "settings": [
     {
       "type": "number",
       "id": "frame_count",
-      "label": "Nombre de frames",
+      "label": "Nombre total de frames (avant optimisation)",
       "default": 315
     },
     {
@@ -206,12 +192,12 @@ document.addEventListener("DOMContentLoaded", () => {
       "min": 800,
       "max": 4000,
       "step": 100,
-      "default": 2200
+      "default": 2000
     }
   ],
   "presets": [
     {
-      "name": "Scroll frames (canvas)"
+      "name": "Scroll frames optimisé"
     }
   ]
 }
