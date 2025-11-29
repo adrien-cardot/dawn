@@ -62,10 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
   /* -----------------------------------------------------
      Hauteur dynamique pour éviter le grand blanc
      ----------------------------------------------------- */
-  function adjustWrapperHeight() {
-    const scrollFactor = 2.2; 
-    wrapper.style.height = (window.innerHeight * scrollFactor) + "px";
-  }
+    function adjustWrapperHeight() {
+      const pixelsPerFrame = window.innerHeight / 1.1; // Ajuste si besoin
+      const totalHeight = pixelsPerFrame * frameCount;
+
+      wrapper.style.height = totalHeight + "px";
+    }
+
 
   adjustWrapperHeight();
   window.addEventListener("resize", adjustWrapperHeight);
