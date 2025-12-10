@@ -16,6 +16,25 @@
         "section_height": 200
       }
     },
+    "contact_form2_aQzJXm": {
+      "type": "contact-form2",
+      "name": "Formulaire de contact",
+      "settings": {
+        "title": "Contactez-nous",
+        "description": "Envoyez-nous un message et nous vous répondrons rapidement."
+      }
+    },
+    "contact_form_Ba3byP": {
+      "type": "contact-form",
+      "name": "t:sections.contact-form.presets.name",
+      "settings": {
+        "heading": "Formulaire de contact",
+        "heading_size": "h1",
+        "color_scheme": "",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
     "scroll_frame_FKqJ8E": {
       "type": "scroll-frame",
       "disabled": true,
@@ -239,6 +258,8 @@
   },
   "order": [
     "scroll_video_opti_RwL6Gf",
+    "contact_form2_aQzJXm",
+    "contact_form_Ba3byP",
     "scroll_frame_FKqJ8E",
     "image_banner",
     "rich_text",
