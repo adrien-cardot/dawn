@@ -16,6 +16,34 @@
         "section_height": 200
       }
     },
+    "1765373043f6d44676": {
+      "type": "apps",
+      "blocks": {
+        "forms_inline_WJqAzg": {
+          "type": "shopify://apps/forms/blocks/inline/8744a304-fcb1-4347-b211-bb6b4759a76a",
+          "settings": {
+            "form_id": "784923",
+            "text_color": "#202020",
+            "button_background_color": "#202020",
+            "button_label_color": "#FFFFFF",
+            "links_color": "#1878B9",
+            "errors_color": "#E02229",
+            "text_alignment": "center",
+            "form_alignment": "center",
+            "padding_top": 0,
+            "padding_bottom": 24,
+            "padding_right": 0,
+            "padding_left": 0
+          }
+        }
+      },
+      "block_order": [
+        "forms_inline_WJqAzg"
+      ],
+      "settings": {
+        "include_margins": true
+      }
+    },
     "contact_form2_aQzJXm": {
       "type": "contact-form2",
       "name": "Formulaire de contact",
@@ -258,6 +286,7 @@
   },
   "order": [
     "scroll_video_opti_RwL6Gf",
+    "1765373043f6d44676",
     "contact_form2_aQzJXm",
     "contact_form_Ba3byP",
     "scroll_frame_FKqJ8E",
